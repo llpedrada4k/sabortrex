@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>saBOR T-Rex Online</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root { --u: min(1vw, 1.9vh, 9px); }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; background: #000; color: #fff; overflow: hidden; overscroll-behavior: none;
+    font-family: "Press Start 2P", "Courier New", monospace; }
+  body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+  .hidden { display: none !important; }
+
+  .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #000; gap: calc(var(--u) * 1.6);
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+
+  h1 { margin: 0; font-weight: normal; text-align: center; line-height: 1.3; font-size: calc(var(--u) * 5.6); letter-spacing: 1px; }
+  h1 span { color: #3ddc4f; }
+  h2 { margin: 0; font-weight: normal; text-align: center; font-size: calc(var(--u) * 3.6); }
+  h2 span { color: #3ddc4f; letter-spacing: 3px; }
+
+  .col { display: flex; flex-direction: column; align-items: stretch; gap: calc(var(--u) * 1.3); width: calc(var(--u) * 44); }
+  .row { display: flex; gap: calc(var(--u) * 1.3); }
+  .row > * { flex: 1; min-width: 0; }
+
+  button, input { font-family: inherit; font-size: calc(var(--u) * 1.6); color: #fff; background: #000;
+    border: max(2px, calc(var(--u) * .35)) solid #fff; padding: calc(var(--u) * 1.3) calc(var(--u) * 1.6);
+    border-radius: 0; cursor: pointer; text-align: center; text-transform: uppercase; width: 100%; }
+  input { cursor: text; border-color: #888; }
+  input:focus { outline: none; border-color: #3ddc4f; }
+  input::placeholder { color: #555; }
+  input#nameInput { display: none; }
+  button:hover, button:focus-visible { background: #fff; color: #000; outline: none; }
+  button:disabled { opacity: .4; cursor: default; }
+  .green { border-color: #3ddc4f; color: #3ddc4f; }
+  .green:hover, .green:focus-visible { background: #3ddc4f; color: #000; }
+  .blue { border-color: #3a7bff; color: #3a7bff; }
+  .blue:hover, .blue:focus-visible { background: #3a7bff; color: #000; }
+  .dim { border-color: #444; color: #888; }
+
+  .msg { min-height: calc(var(--u) * 2.4); font-size: calc(var(--u) * 1.3); text-align: center; color: #e53030; line-height: 1.6; padding: 0 3%; }
+  #hint { position: absolute; bottom: calc(var(--u) * 1.2); width: 100%; text-align: center; color: #666;
+    font-size: calc(var(--u) * 1.1); line-height: 1.9; padding: 0 3%; }
+
+  #plist { display: flex; flex-direction: column; gap: calc(var(--u) * 1); width: calc(var(--u) * 44); }
+  .prow { display: flex; align-items: center; gap: calc(var(--u) * 1.4); border: 2px solid #333; padding: calc(var(--u) * 1.1) calc(var(--u) * 1.4);
+    font-size: calc(var(--u) * 1.7); }
+  .prow i { width: calc(var(--u) * 2.2); height: calc(var(--u) * 2.2); display: block; flex: none; }
+  .prow b { margin-left: auto; font-weight: normal; color: #888; font-size: .7em; }
+
+  /* jogo */
+  #strips { position: absolute; inset: 0; display: flex; flex-direction: column;
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); }
+  .strip { flex: 1 1 0; min-height: 0; display: flex; align-items: center; justify-content: center; border-top: 2px solid #222; }
+  .strip:first-child { border-top: 0; }
+  canvas { display: block; image-rendering: pixelated; background: #000; touch-action: none; }
+
+  #leaveBtn { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    width: auto; padding: 6px 12px; font-size: 9px; border-width: 2px; border-color: #444; color: #888; background: rgba(0,0,0,.6); z-index: 5; }
+  #brakeBtn { position: fixed; right: calc(env(safe-area-inset-right, 0px) + 10px); bottom: calc(env(safe-area-inset-bottom, 0px) + 10px);
+    width: auto; padding: 14px 22px; font-size: 14px; border-width: 2px; border-color: #3a7bff; color: #3a7bff;
+    background: rgba(0,0,0,.6); touch-action: none; z-index: 5; }
+  #brakeBtn.on { background: #3a7bff; color: #000; }
+
+  #results { position: absolute; inset: 0; z-index: 8; background: rgba(0,0,0,.9); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: calc(var(--u) * 1.4); }
+  .rrow { display: flex; align-items: center; gap: calc(var(--u) * 1.4); width: calc(var(--u) * 50); border: 2px solid #333;
+    padding: calc(var(--u) * 1) calc(var(--u) * 1.4); font-size: calc(var(--u) * 1.6); }
+  .rrow i { width: calc(var(--u) * 2); height: calc(var(--u) * 2); display: block; flex: none; }
+  .rrow .n { margin-left: auto; text-align: right; }
+  .rrow .t { color: #888; font-size: .75em; width: 5em; text-align: right; }
+  .rrow.win { border-color: #ffd400; color: #ffd400; }
+  #resBtns { display: flex; gap: calc(var(--u) * 1.3); align-items: center; }
+  #resBtns button { width: auto; }
+  #resWait { font-size: calc(var(--u) * 1.3); color: #888; }
+
+  #ov { position: fixed; inset: 0; z-index: 20; background: #000; display: none; align-items: center;
+    justify-content: center; text-align: center; padding: 24px; line-height: 2.2; font-size: clamp(11px, 3.6vw, 20px); }
+  #ov small { display: block; color: #666; font-size: .6em; margin-top: 10px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+</head>
+<body>
+
+<!-- MENU -->
+<div id="menu" class="screen">
+  <h1>sa<span>BOR</span><br>T-Rex</h1>
+  <div class="col">
+    <button id="nameBtn">NOME: JOGADOR</button>
+    <input id="nameInput" maxlength="10" placeholder="DIGITE SEU NOME" autocomplete="off" spellcheck="false">
+    <div class="row">
+      <button id="soloBtn" class="green">SOLO</button>
+      <button id="createBtn" class="blue">CRIAR SALA</button>
+    </div>
+    <div class="row">
+      <input id="codeInput" maxlength="4" placeholder="CODIGO" autocomplete="off" spellcheck="false">
+      <button id="joinBtn">ENTRAR</button>
+    </div>
+  </div>
+  <div id="menuMsg" class="msg"></div>
+  <div id="hint">ESPAÇO / ↑ / TOQUE: PULAR &nbsp; ↓: CAIR RÁPIDO<br>A CADA CARTA ESCOLHIDA VOCÊ FICA MAIS FORTE</div>
+</div>
+
+<!-- LOBBY -->
+<div id="lobby" class="screen hidden">
+  <h2>SALA <span id="roomCode">----</span></h2>
+  <div id="plist"></div>
+  <div class="col">
+    <div class="row">
+      <button id="copyBtn" class="blue">COPIAR LINK</button>
+      <button id="goBtn" class="green">COMEÇAR</button>
+    </div>
+    <button id="lobbyLeave" class="dim">SAIR</button>
+  </div>
+  <div id="lobbyMsg" class="msg"></div>
+</div>
+
+<!-- JOGO -->
+<div id="game" class="screen hidden" style="padding:0; gap:0; justify-content:flex-start;">
+  <div id="strips"></div>
+  <button id="leaveBtn" class="hidden">SAIR</button>
+  <button id="brakeBtn" class="hidden">X</button>
+  <div id="results" class="hidden"></div>
+</div>
+
+<div id="ov"><div id="ovText"></div></div>
+
+<script>
+(() => {
+  'use strict';
+  const W = 800, H = 300, GROUND = 250;
+  const FONT = '"Press Start 2P", "Courier New", monospace';
+  const $ = id => document.getElementById(id);
+
+  // ---------- configuração ----------
+  const MAX_PLAYERS = 4;
+  const SEND_EVERY_MS = 50;       // taxa de envio do estado (20x por segundo)
+  const GRAV = 2400, JUMP = -760;
+  const CARD_EARLY_M = 300, CARD_EARLY_UNTIL = 600, CARD_EVERY_M = 500;
+  const DOUBLE_CD = 15;
+  const JUMP_PER_STACK = 0.05;
+  const BRAKE_PER_STACK = 0.03;
+  const SHOT_START = 30, SHOT_STEP = 3, SHOT_MIN = 6;
+  const SLOWFALL_GRAV = 0.45;
+  const CARD_COLORS = ['#e53030', '#3ddc4f', '#3a7bff'];
+  const PLAYER_COLORS = ['#3ddc4f', '#3a7bff', '#ff4fd8', '#26e0e0'];
+  const PEER_PREFIX = 'sabortrex-';
+  const PEER_CFG = { debug: 0, config: { iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:global.stun.twilio.com:3478' } ] } };
+
+  // ---------- storage ----------
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  let playerName = (store.get('sabor_name') || '').trim().toUpperCase().slice(0, 10);
+  let record = null;
+  try { record = JSON.parse(store.get('sabor_record') || 'null'); } catch (e) { record = null; }
+  if (record && typeof record.meters !== 'number') record = null;
+
+  // ---------- áudio ----------
+  const NOTE = { C2: 65.41, C3: 130.81, C5: 523.25 };
+  let ac = null;
+  function audio() {
+    try {
+      if (!ac) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) ac = new AC(); }
+      if (ac && ac.state === 'suspended') ac.resume();
+    } catch (e) { ac = null; }
+    return ac;
+  }
+  function tone(freq, dur, type, vol) {
+    const a = audio(); if (!a) return;
+    const t = a.currentTime;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(a.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  ['touchend', 'click', 'keydown'].forEach(ev => addEventListener(ev, () => audio(), { passive: true }));
+  const sfx = {
+    jump:   () => tone(NOTE.C3, 0.14, 'square', 0.12),
+    select: () => tone(NOTE.C5, 0.09, 'square', 0.08),
+    death:  () => { tone(NOTE.C2, 0.55, 'sawtooth', 0.28); tone(NOTE.C2, 0.55, 'square', 0.12); }
+  };
+
+  // ---------- aleatório com semente (mesmos obstáculos para todos) ----------
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+
+  // ---------- telas ----------
+  const screens = { menu: $('menu'), lobby: $('lobby'), game: $('game') };
+  function showScreen(n) { for (const k in screens) screens[k].classList.toggle('hidden', k !== n); }
+  const setMsg = (el, t, ok) => { el.textContent = t || ''; el.style.color = ok ? '#3ddc4f' : '#e53030'; };
+
+  // ---------- menu ----------
+  const nameBtn = $('nameBtn'), nameInput = $('nameInput'), soloBtn = $('soloBtn'),
+        createBtn = $('createBtn'), joinBtn = $('joinBtn'), codeInput = $('codeInput'), menuMsg = $('menuMsg');
+  const myName = () => playerName || 'JOGADOR';
+  function refreshNameBtn() { nameBtn.textContent = 'NOME: ' + myName(); }
+  refreshNameBtn();
+  nameBtn.addEventListener('click', () => {
+    sfx.select();
+    nameBtn.style.display = 'none';
+    nameInput.style.display = 'block';
+    nameInput.value = playerName;
+    nameInput.focus();
+  });
+  function commitName() {
+    playerName = nameInput.value.trim().toUpperCase().replace(/[^A-Z0-9 _\-.]/g, '').slice(0, 10);
+    store.set('sabor_name', playerName);
+    nameInput.style.display = 'none';
+    nameBtn.style.display = 'block';
+    refreshNameBtn();
+  }
+  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') { sfx.select(); commitName(); } e.stopPropagation(); });
+  nameInput.addEventListener('blur', commitName);
+  codeInput.addEventListener('input', () => { codeInput.value = codeInput.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); });
+  codeInput.addEventListener('keydown', e => { if (e.key === 'Enter') joinBtn.click(); e.stopPropagation(); });
+
+  soloBtn.addEventListener('click', () => { sfx.select(); if (nameInput.style.display === 'block') commitName(); startSolo(); });
+  createBtn.addEventListener('click', () => { sfx.select(); if (nameInput.style.display === 'block') commitName(); createRoom(); });
+  joinBtn.addEventListener('click', () => {
+    sfx.select();
+    if (nameInput.style.display === 'block') commitName();
+    const code = codeInput.value.trim().toUpperCase();
+    if (code.length !== 4) { setMsg(menuMsg, 'DIGITE O CODIGO DE 4 LETRAS'); return; }
+    joinRoom(code);
+  });
+  try {
+    const qs = new URLSearchParams(location.search).get('sala');
+    if (qs) { codeInput.value = qs.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4); setMsg(menuMsg, 'CODIGO PREENCHIDO. CLIQUE EM ENTRAR', true); }
+  } catch (e) {}
+
+  // =====================================================================
+  //                              JOGO LOCAL
+  // =====================================================================
+  let ctx = null;
+  let state = 'idle';      // idle | playing | cards | over
+  let multi = false, gameActive = false;
+  let dino, obstacles, projectiles, speed, baseSpd, worldX, nextSpawn, dist, elapsed, overAt;
+  let nextCardM, cardList, cardsAt, hover, shotTimer, invuln, flashT, braking, dblCd, countdown, rng, result, lastCdN;
+  let up = null;
+  let resultsShown = false, resultsTimer = 0;
+  const shotInterval = n => Math.max(SHOT_MIN, SHOT_START - SHOT_STEP * (n - 1));
+
+  const ABILITIES = [
+    { id: 'jump', name: 'PULO ALTO', can: () => true,
+      desc: () => '+5% NA ALTURA DO PULO. ACUMULA',
+      info: () => (up.jump * 5) + '% > ' + ((up.jump + 1) * 5) + '%', apply: () => { up.jump++; } },
+    { id: 'double', name: 'PULO DUPLO', can: () => !up.double,
+      desc: () => 'PULE DE NOVO NO AR. RECARREGA A CADA 15S', info: () => '', apply: () => { up.double = true; } },
+    { id: 'brake', name: 'FREIO', can: () => true,
+      desc: () => 'SEGURE X: -3% DE VELOCIDADE. ACUMULA',
+      info: () => (up.brake * 3) + '% > ' + ((up.brake + 1) * 3) + '%', apply: () => { up.brake++; } },
+    { id: 'shoot', name: 'TIRO', can: () => up.shoot === 0 || shotInterval(up.shoot) > SHOT_MIN,
+      desc: () => 'DISPARA SOZINHO NO OBSTACULO MAIS PROXIMO',
+      info: () => up.shoot === 0 ? 'A CADA ' + SHOT_START + 'S' : shotInterval(up.shoot) + 'S > ' + shotInterval(up.shoot + 1) + 'S',
+      apply: () => { up.shoot++; } },
+    { id: 'clutch', name: 'CLUTCH', can: () => !up.clutch,
+      desc: () => 'SOBREVIVE A 1 MORTE E DESTROI TUDO NA TELA. 1 USO', info: () => '', apply: () => { up.clutch = true; } },
+    { id: 'slow', name: 'QUEDA LENTA', can: () => !up.slow,
+      desc: () => 'VOCE CAI MAIS DEVAGAR DEPOIS DO PULO', info: () => '', apply: () => { up.slow = true; } }
+  ];
+
+  function reset(seed) {
+    dino = { x: 70, y: GROUND - 32, w: 32, h: 32, vy: 0, onGround: true };
+    obstacles = []; projectiles = [];
+    speed = 380; baseSpd = 380; worldX = 0; nextSpawn = 500; dist = 0; elapsed = 0;
+    result = null;
+    up = { jump: 0, double: false, brake: 0, shoot: 0, clutch: false, slow: false };
+    nextCardM = CARD_EARLY_M; dblCd = 0; cardList = []; hover = -1; cardsAt = 0;
+    shotTimer = 0; invuln = 0; flashT = 0; braking = false;
+    rng = mulberry32(seed);
+    countdown = multi ? 3.4 : 0; lastCdN = 99;
+    state = 'playing';
+    resultsShown = false; resultsTimer = 0;
+    $('results').classList.add('hidden');
+  }
+
+  function jump() {
+    if (state !== 'playing' || countdown > 0 || paused) return;
+    const v = JUMP * Math.sqrt(1 + JUMP_PER_STACK * up.jump);
+    if (dino.onGround) { dino.vy = v; dino.onGround = false; sfx.jump(); }
+    else if (up.double && dblCd <= 0) { dino.vy = v; dblCd = DOUBLE_CD; sfx.jump(); }
+  }
+
+  // ---------- cartas ----------
+  function openCards() {
+    const pool = ABILITIES.filter(a => a.can());
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    cardList = pool.slice(0, 3);
+    if (!cardList.length) return;
+    state = 'cards'; cardsAt = performance.now(); hover = -1; braking = false;
+  }
+  function cardRect(i, n) {
+    const cw = 190, ch = 170, gap = 28;
+    const total = n * cw + (n - 1) * gap;
+    return { x: (W - total) / 2 + i * (cw + gap), y: 82, w: cw, h: ch };
+  }
+  function pickCard(i) {
+    if (state !== 'cards' || !cardList[i]) return;
+    if (performance.now() - cardsAt < 350) return;
+    sfx.select();
+    cardList[i].apply();
+    state = 'playing';
+  }
+  function pointerPos(e) {
+    const r = localStrip.canvas.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+  }
+  function cardAt(p) {
+    for (let i = 0; i < cardList.length; i++) {
+      const r = cardRect(i, cardList.length);
+      if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) return i;
+    }
+    return -1;
+  }
+
+  // ---------- spawn (determinístico pela semente) ----------
+  function spawn() {
+    // sempre consome a mesma quantidade de números, para todos ficarem em sincronia
+    const r = []; for (let i = 0; i < 9; i++) r.push(rng());
+    const at = nextSpawn / 50;               // posição "planejada" em metros (igual para todos)
+    const x = W + 20;
+    if (at > 150 && r[0] < 0.3) {
+      const lv = [GROUND - 28 - 4, GROUND - 28 - 50, GROUND - 28 - 110];
+      obstacles.push({ type: 'bird', x, y: lv[Math.floor(r[1] * lv.length)], w: 28, h: 28, extra: 70 });
+    } else {
+      const n = (r[2] < 0.25 && at > 60) ? 2 : 1;
+      let cx = x;
+      for (let i = 0; i < n; i++) {
+        const w = 14 + Math.floor(r[3 + i * 2] * 3) * 6;
+        const h = 30 + Math.floor(r[4 + i * 2] * 4) * 12;
+        obstacles.push({ type: 'cactus', x: cx, y: GROUND - h, w, h, extra: 0 });
+        cx += w + 4;
+      }
+    }
+    const baseAt = Math.min(380 + at * 0.5, 820);
+    nextSpawn += 330 + baseAt * 0.45 + r[8] * 380;
+  }
+
+  // ---------- update ----------
+  const hit = (a, b, p) => a.x + p < b.x + b.w - p && a.x + a.w - p > b.x + p &&
+                           a.y + p < b.y + b.h - p && a.y + a.h - p > b.y + p;
+
+  function update(dt) {
+    elapsed += dt;
+    baseSpd = Math.min(380 + (dist / 50) * 0.5, 820);   // dificuldade por distância (justo no multiplayer)
+    speed = baseSpd * (braking ? Math.max(0.3, 1 - BRAKE_PER_STACK * up.brake) : 1);
+    dist += speed * dt;
+    worldX += speed * dt;
+    if (invuln > 0) invuln -= dt;
+    if (flashT > 0) flashT -= dt;
+    if (dblCd > 0) dblCd -= dt;
+
+    const g = GRAV * (up.slow && dino.vy > 0 ? SLOWFALL_GRAV : 1);
+    dino.vy += g * dt;
+    dino.y += dino.vy * dt;
+    if (dino.y >= GROUND - dino.h) { dino.y = GROUND - dino.h; dino.vy = 0; dino.onGround = true; }
+
+    if (worldX >= nextSpawn) spawn();
+    for (const o of obstacles) o.x -= (speed + o.extra) * dt;
+    obstacles = obstacles.filter(o => o.x + o.w > -10);
+
+    if (up.shoot > 0) {
+      shotTimer = Math.min(shotTimer + dt, shotInterval(up.shoot));
+      if (shotTimer >= shotInterval(up.shoot)) {
+        let target = null;
+        for (const o of obstacles) if (o.x > dino.x + dino.w && o.x < W && (!target || o.x < target.x)) target = o;
+        if (target) { projectiles.push({ x: dino.x + dino.w, y: target.y + target.h / 2 - 3, w: 12, h: 6 }); shotTimer = 0; }
+      }
+    }
+    for (const p of projectiles) {
+      p.x += 800 * dt;
+      for (let i = 0; i < obstacles.length; i++) {
+        if (hit(p, obstacles[i], 0)) { obstacles.splice(i, 1); p.dead = true; break; }
+      }
+    }
+    projectiles = projectiles.filter(p => !p.dead && p.x < W + 20);
+
+    if (invuln <= 0) {
+      for (const o of obstacles) {
+        if (hit(dino, o, 3)) {
+          if (up.clutch) {
+            up.clutch = false; invuln = 0.8; flashT = 0.3;
+            obstacles = []; nextSpawn = worldX + 450;
+          } else { gameOver(); return; }
+          break;
+        }
+      }
+    }
+
+    if (Math.floor(dist / 50) >= nextCardM) {
+      nextCardM += nextCardM < CARD_EARLY_UNTIL ? CARD_EARLY_M : CARD_EVERY_M;
+      openCards();
+    }
+  }
+
+  function gameOver() {
+    state = 'over';
+    sfx.death();
+    overAt = performance.now();
+    braking = false;
+    const m = Math.floor(dist / 50);
+    if (!record) {
+      result = { type: 'first', meters: m };
+      record = { name: myName(), meters: m };
+      store.set('sabor_record', JSON.stringify(record));
+    } else if (m > record.meters) {
+      result = { type: 'new', meters: m, old: record.meters };
+      record = { name: myName(), meters: m };
+      store.set('sabor_record', JSON.stringify(record));
+    } else {
+      result = { type: 'no', meters: m };
+    }
+    if (multi) sendSnap();
+  }
+
+  // =====================================================================
+  //                            DESENHO
+  // =====================================================================
+  const pad4 = n => String(n).padStart(4, '0');
+  const fmtTime = s => { s = Math.floor(s); return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0'); };
+  function text(str, x, y, size, color, align) {
+    ctx.font = size + 'px ' + FONT;
+    ctx.fillStyle = color; ctx.textAlign = align || 'left'; ctx.textBaseline = 'top';
+    ctx.fillText(str, x, y);
+  }
+  function wrap(str, maxW, size) {
+    ctx.font = size + 'px ' + FONT;
+    const words = str.split(' '), lines = [];
+    let cur = '';
+    for (const w of words) {
+      const t = cur ? cur + ' ' + w : w;
+      if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  function hudUpgradesFrom(u, shotLeft, dbl) {
+    const parts = [];
+    if (u.jump) parts.push('PULO+' + u.jump * 5 + '%');
+    if (u.double) parts.push(dbl > 0 ? '2X ' + Math.ceil(dbl) + 'S' : '2X OK');
+    if (u.brake) parts.push('FREIO ' + u.brake * 3 + '%');
+    if (u.shoot) parts.push('TIRO ' + Math.ceil(shotLeft) + 'S');
+    if (u.clutch) parts.push('CLUTCH');
+    if (u.slow) parts.push('LENTA');
+    return parts.join('  ');
+  }
+  const hudUpgrades = () => hudUpgradesFrom(up, shotInterval(up.shoot || 1) - shotTimer, dblCd);
+
+  // cena comum (jogador local e "fantasmas")
+  function drawScene(v) {
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = '#808080'; ctx.fillRect(0, GROUND, W, 3);
+    ctx.fillStyle = '#404040';
+    for (let i = 0; i < 14; i++) {
+      const px = ((i * 97 - v.worldX) % W + W) % W;
+      ctx.fillRect(px, GROUND + 10 + (i % 3) * 8, 6 + (i % 2) * 4, 2);
+    }
+    if (!v.blink || Math.floor(performance.now() / 80) % 2 === 0) {
+      ctx.fillStyle = v.color;
+      ctx.fillRect(Math.round(v.dino.x), Math.round(v.dino.y), 32, 32);
+    }
+    for (const o of v.obstacles) {
+      ctx.fillStyle = o.type === 'bird' ? '#ffd400' : '#e53030';
+      ctx.fillRect(Math.round(o.x), Math.round(o.y), o.w, o.h);
+    }
+    ctx.fillStyle = '#fff';
+    for (const p of v.projectiles) ctx.fillRect(Math.round(p.x), Math.round(p.y), 12, 6);
+
+    text(pad4(Math.floor(v.m)) + ' M', W - 16, 14, 12, '#fff', 'right');
+    text(fmtTime(v.tm), W - 16, 34, 12, '#aaa', 'right');
+    if (v.rec) text('REC ' + pad4(v.rec.meters) + ' M', 16, 14, 10, '#666', 'left');
+    if (v.hud) text(v.hud, 16, 284, 8, '#777', 'left');
+    if (v.name) text(v.name, W / 2, 12, 12, v.nameColor, 'center');   // nome no topo, centralizado
+
+    if (v.flashT > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (v.flashT / 0.3 * 0.6) + ')'; ctx.fillRect(0, 0, W, H); }
+  }
+
+  const slotColor = id => PLAYER_COLORS[(id || 0) % PLAYER_COLORS.length];
+  function localName() {
+    if (room) { const p = getPlayer(room.myId); if (p) return p.name; }
+    return myName();
+  }
+  const myColor = () => slotColor(room ? room.myId : 0);
+
+  function drawLocal() {
+    drawScene({
+      worldX, dino, obstacles, projectiles, m: dist / 50, tm: elapsed, rec: record, hud: hudUpgrades(),
+      name: localName(), nameColor: myColor(), color: myColor(), blink: invuln > 0, flashT
+    });
+
+    if (countdown > 0) {
+      const n = Math.ceil(countdown - 0.4);
+      if (n !== lastCdN) { lastCdN = n; sfx.select(); }
+      ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(0, 0, W, H);
+      text(n > 0 ? String(n) : 'VAI!', W / 2, 105, 60, '#fff', 'center');
+    }
+    if (state === 'cards') drawCards();
+    if (state === 'over' && result) drawOverPanel();
+  }
+
+  function drawOverPanel() {
+    ctx.fillStyle = 'rgba(0,0,0,0.72)'; ctx.fillRect(0, 60, W, 150);
+    text('FIM DE JOGO', W / 2, 74, 24, '#fff', 'center');
+    if (result.type === 'first') {
+      text('PLACAR: ' + result.meters + ' M', W / 2, 118, 14, '#fff', 'center');
+      text('PRIMEIRO RECORDE SALVO!', W / 2, 146, 10, '#ffd400', 'center');
+    } else if (result.type === 'new') {
+      text('NOVO RECORDE: ' + result.meters + ' M', W / 2, 118, 14, '#3ddc4f', 'center');
+      text('ANTERIOR: ' + result.old + ' M', W / 2, 146, 10, '#888', 'center');
+    } else {
+      text('VOCE: ' + result.meters + ' M', W / 2, 118, 14, '#fff', 'center');
+      text('RECORDE: ' + record.meters + ' M  (' + record.name + ')', W / 2, 146, 10, '#e53030', 'center');
+    }
+    text(multi ? 'AGUARDANDO OS OUTROS JOGADORES...' : 'ESPACO / TOQUE: REINICIAR', W / 2, 180, 9, '#888', 'center');
+  }
+
+  function drawCards() {
+    ctx.fillStyle = 'rgba(0,0,0,0.82)'; ctx.fillRect(0, 0, W, H);
+    text('ESCOLHA UMA CARTA', W / 2, 30, 16, '#fff', 'center');
+    text(Math.floor(dist / 50) + ' M', W / 2, 58, 9, '#888', 'center');
+    const n = cardList.length;
+    for (let i = 0; i < n; i++) {
+      const r = cardRect(i, n), a = cardList[i];
+      ctx.fillStyle = CARD_COLORS[i]; ctx.fillRect(r.x, r.y, r.w, r.h);
+      if (hover === i) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 4; ctx.strokeRect(r.x - 4, r.y - 4, r.w + 8, r.h + 8); }
+      let y = r.y + 14;
+      for (const l of wrap(a.name, r.w - 24, 11)) { text(l, r.x + r.w / 2, y, 11, '#000', 'center'); y += 16; }
+      y += 8;
+      for (const l of wrap(a.desc(), r.w - 20, 8)) { text(l, r.x + r.w / 2, y, 8, '#000', 'center'); y += 13; }
+      const inf = a.info();
+      if (inf) text(inf, r.x + r.w / 2, r.y + r.h - 40, 8, '#000', 'center');
+      text('[' + (i + 1) + ']', r.x + r.w / 2, r.y + r.h - 20, 9, '#000', 'center');
+    }
+  }
+
+  // fantasma de outro jogador, reconstruído a partir dos dados de rede
+  function drawGhost(p, now) {
+    const s = p.snap;
+    const col = slotColor(p.id);
+    if (!s) {
+      drawScene({ worldX: 0, dino: { x: 70, y: GROUND - 32 }, obstacles: [], projectiles: [], m: 0, tm: 0,
+        name: p.name, nameColor: col, color: col, flashT: 0 });
+      note(p.gone ? 'DESCONECTOU' : 'CONECTANDO...', '#888');
+      return;
+    }
+    const run = s.st === 'p' && !p.gone;
+    const age = run ? Math.min((now - p.snapAt) / 1000, 0.15) : 0;
+    const obs = s.ob.map(a => ({ type: a[0] ? 'bird' : 'cactus', x: a[1] - a[5] * age, y: a[2], w: a[3], h: a[4] }));
+    const prj = s.pr.map(a => ({ x: a[0] + 800 * age, y: a[1] }));
+    const m = s.m + s.sp * age / 50;
+    const dead = s.st === 'd' || p.gone;
+    drawScene({
+      worldX: m * 50, dino: { x: 70, y: Math.min(GROUND - 32, s.y + s.vy * age) }, obstacles: obs, projectiles: prj,
+      m, tm: s.tm + age, hud: s.h, name: p.name, nameColor: dead ? '#666' : col, color: col, blink: !!s.inv, flashT: 0
+    });
+    if (p.gone) note('DESCONECTOU', '#e53030', true);
+    else if (s.st === 'd') note('MORREU: ' + s.m + ' M', '#e53030', true);
+    else if (s.st === 'c') note('ESCOLHENDO CARTA...', '#ffd400');
+    else if (s.st === 'z') note('PAUSADO', '#888');
+  }
+  function note(str, color, dim) {
+    if (dim) { ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0, 0, W, H); }
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'; ctx.fillRect(0, 118, W, 44);
+    text(str, W / 2, 132, 16, color, 'center');
+  }
+
+  // =====================================================================
+  //                       TELAS DE JOGO (strips)
+  // =====================================================================
+  const stripsEl = $('strips'), gameEl = $('game');
+  let strips = [], localStrip = null;
+
+  function buildStrips() {
+    stripsEl.innerHTML = '';
+    strips = [];
+    const list = [];
+    if (multi && room) {
+      const me = getPlayer(room.myId);
+      if (me) list.push(me);
+      room.players.forEach(p => { if (p.id !== room.myId) list.push(p); });
+    } else list.push({ id: 0, local: true });
+    for (const p of list) {
+      const div = document.createElement('div'); div.className = 'strip';
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      div.appendChild(cv); stripsEl.appendChild(div);
+      const c = cv.getContext('2d'); c.imageSmoothingEnabled = false;
+      strips.push({ id: p.id, canvas: cv, ctx: c, div, local: !multi || p.id === room.myId });
+    }
+    localStrip = strips[0];
+    layout();
+  }
+  function layout() {
+    if (!strips.length) return;
+    const r = strips[0].div.getBoundingClientRect();
+    const s = Math.min(r.width / W, r.height / H);
+    for (const st of strips) {
+      st.canvas.style.width = Math.floor(W * s) + 'px';
+      st.canvas.style.height = Math.floor(H * s) + 'px';
+    }
+  }
+  addEventListener('resize', layout);
+
+  function renderAll(now) {
+    for (const st of strips) {
+      ctx = st.ctx;
+      if (st.local) drawLocal();
+      else { const p = getPlayer(st.id); if (p) drawGhost(p, now); }
+    }
+  }
+
+  // ---------- UI de jogo ----------
+  const leaveBtn = $('leaveBtn'), brakeBtn = $('brakeBtn');
+  function setShown(el, v) { if (el._v !== v) { el._v = v; el.classList.toggle('hidden', !v); } }
+  function syncUI() {
+    setShown(brakeBtn, gameActive && state === 'playing' && up && up.brake > 0 && !paused);
+    brakeBtn.classList.toggle('on', braking);
+    setShown(leaveBtn, gameActive && (multi || state === 'over'));
+  }
+  leaveBtn.addEventListener('click', e => { e.stopPropagation(); sfx.select(); leaveGame(); });
+  const brakeOn = e => { e.preventDefault(); if (state === 'playing') braking = true; };
+  const brakeOff = () => { braking = false; };
+  brakeBtn.addEventListener('pointerdown', brakeOn);
+  brakeBtn.addEventListener('pointerup', brakeOff);
+  brakeBtn.addEventListener('pointerleave', brakeOff);
+  brakeBtn.addEventListener('pointercancel', brakeOff);
+
+  // ---------- entrada ----------
+  addEventListener('keydown', e => {
+    if (!gameActive) return;
+    if (['Space', 'ArrowUp', 'ArrowDown'].includes(e.code)) e.preventDefault();
+    if (state === 'cards') {
+      const m = { Digit1: 0, Digit2: 1, Digit3: 2, Numpad1: 0, Numpad2: 1, Numpad3: 2 };
+      if (e.code in m) pickCard(m[e.code]);
+      return;
+    }
+    if (e.code === 'KeyX' && state === 'playing' && up.brake > 0) braking = true;
+    if (e.code === 'Space' || e.code === 'ArrowUp') {
+      if (state === 'playing') { if (!e.repeat) jump(); }
+      else if (state === 'over' && !multi && performance.now() - overAt > 350) startSolo();
+    }
+    if (e.code === 'ArrowDown' && state === 'playing' && !dino.onGround) dino.vy = Math.max(dino.vy, 900);
+    if ((e.code === 'KeyM' || e.code === 'Escape') && state === 'over' && !multi) leaveGame();
+  });
+  addEventListener('keyup', e => { if (e.code === 'KeyX') braking = false; });
+
+  gameEl.addEventListener('pointerdown', e => {
+    if (!gameActive || e.target.closest('button') || e.target.closest('#results')) return;
+    if (state === 'cards') { pickCard(cardAt(pointerPos(e))); return; }
+    if (state === 'playing') jump();
+    else if (state === 'over' && !multi && performance.now() - overAt > 350) startSolo();
+  });
+  gameEl.addEventListener('pointermove', e => {
+    if (gameActive && state === 'cards') hover = cardAt(pointerPos(e));
+  });
+
+  // ---------- loop principal ----------
+  let raf = 0, lastT = 0, lastSend = 0;
+  function frame(now) {
+    raf = requestAnimationFrame(frame);
+    if (!gameActive) return;
+    const dt = Math.min((now - lastT) / 1000, 0.05);
+    lastT = now;
+    if (!paused) {
+      if (countdown > 0) countdown -= dt;
+      else if (state === 'playing') update(dt);
+    }
+    if (multi && now - lastSend >= SEND_EVERY_MS) { lastSend = now; sendSnap(); }
+    checkResults(now);
+    renderAll(now);
+    syncUI();
+  }
+
+  function startRun(seed) {
+    reset(seed);
+    gameActive = true;
+    showScreen('game');
+    buildStrips();
+    lastT = performance.now(); lastSend = 0;
+    if (!raf) raf = requestAnimationFrame(frame);
+  }
+  function stopLoop() {
+    gameActive = false; state = 'idle';
+    if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    braking = false;
+    $('results').classList.add('hidden');
+  }
+  function startSolo() { multi = false; room && leaveRoom(true); startRun((Math.random() * 2 ** 31) >>> 0); }
+  function leaveGame() {
+    if (multi) { leaveRoom(); return; }
+    stopLoop(); showScreen('menu');
+  }
+
+  // =====================================================================
+  //                          MULTIPLAYER (P2P)
+  // =====================================================================
+  let room = null; // { code, isHost, peer, hostConn, players:[{id,name,host,conn,snap,snapAt,gone}], myId, nextId, phase }
+  const getPlayer = id => room ? room.players.find(p => p.id === id) : null;
+  const brief = p => ({ id: p.id, name: p.name, host: !!p.host });
+  const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const randCode = () => Array.from({ length: 4 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+  const cleanName = n => (String(n || '').toUpperCase().replace(/[^A-Z0-9 _\-.]/g, '').trim().slice(0, 10)) || 'JOGADOR';
+  function uniqueName(n) {
+    let name = n, i = 2;
+    while (room.players.some(p => p.name === name)) { name = n.slice(0, 9) + i; i++; }
+    return name;
+  }
+  function sendTo(conn, msg) { try { if (conn && conn.open) conn.send(msg); } catch (e) {} }
+  function broadcast(msg, exceptId) {
+    if (!room || !room.isHost) return;
+    for (const p of room.players) if (p.conn && !p.gone && p.id !== exceptId) sendTo(p.conn, msg);
+  }
+  const peerOK = () => typeof Peer !== 'undefined';
+  const NOPEER = 'MULTIPLAYER INDISPONIVEL. VERIFIQUE A INTERNET';
+
+  // ----- criar sala (host) -----
+  function createRoom(attempt = 0) {
+    if (!peerOK()) { setMsg(menuMsg, NOPEER); return; }
+    setMsg(menuMsg, 'CRIANDO SALA...', true);
+    const code = randCode();
+    const peer = new Peer(PEER_PREFIX + code, PEER_CFG);
+    let opened = false;
+    peer.on('open', () => {
+      opened = true;
+      room = { code, isHost: true, peer, hostConn: null, players: [], myId: 0, nextId: 1, phase: 'lobby' };
+      room.players.push({ id: 0, name: cleanName(myName()), host: true, conn: null, snap: null, gone: false });
+      peer.on('connection', hostOnConnection);
+      peer.on('disconnected', () => { try { peer.reconnect(); } catch (e) {} });
+      enterLobby();
+    });
+    peer.on('error', err => {
+      if (!opened) {
+        try { peer.destroy(); } catch (e) {}
+        if (err.type === 'unavailable-id' && attempt < 5) createRoom(attempt + 1);
+        else setMsg(menuMsg, 'ERRO AO CRIAR SALA: ' + err.type);
+      }
+    });
+  }
+
+  function hostOnConnection(conn) {
+    let pid = null;
+    conn.on('data', d => {
+      if (!d || typeof d !== 'object' || !room) return;
+      if (d.t === 'hello' && pid === null) {
+        if (room.phase === 'playing') { sendTo(conn, { t: 'reject', reason: 'A PARTIDA JA COMECOU' }); setTimeout(() => { try { conn.close(); } catch (e) {} }, 400); return; }
+        if (room.players.filter(p => !p.gone).length >= MAX_PLAYERS) { sendTo(conn, { t: 'reject', reason: 'SALA CHEIA' }); setTimeout(() => { try { conn.close(); } catch (e) {} }, 400); return; }
+        pid = room.nextId++;
+        const name = uniqueName(cleanName(d.name));
+        room.players.push({ id: pid, name, host: false, conn, snap: null, gone: false });
+        sendTo(conn, { t: 'welcome', id: pid, name, code: room.code });
+        broadcast({ t: 'lobby', players: room.players.filter(p => !p.gone).map(brief) });
+        renderLobby();
+      } else if (d.t === 'state' && pid !== null) {
+        const p = getPlayer(pid); if (!p || !d.s) return;
+        p.snap = d.s; p.snapAt = performance.now();
+        broadcast({ t: 'state', id: pid, s: d.s }, pid);
+      }
+    });
+    conn.on('close', () => {
+      if (pid === null || !room) return;
+      const p = getPlayer(pid); if (!p) return;
+      p.gone = true;
+      if (room.phase !== 'playing') room.players = room.players.filter(x => x.id !== pid);
+      broadcast({ t: 'left', id: pid });
+      if (room.phase !== 'playing') broadcast({ t: 'lobby', players: room.players.filter(x => !x.gone).map(brief) });
+      renderLobby();
+    });
+  }
+
+  // ----- entrar na sala (convidado) -----
+  function joinRoom(code) {
+    if (!peerOK()) { setMsg(menuMsg, NOPEER); return; }
+    setMsg(menuMsg, 'ENTRANDO NA SALA...', true);
+    const peer = new Peer(undefined, PEER_CFG);
+    let finished = false;
+    const fail = m => { if (finished) return; finished = true; clearTimeout(timer); setMsg(menuMsg, m); try { peer.destroy(); } catch (e) {} };
+    const timer = setTimeout(() => fail('SALA NAO ENCONTRADA'), 12000);
+    peer.on('error', err => {
+      if (!finished) fail(err.type === 'peer-unavailable' ? 'SALA NAO ENCONTRADA' : 'ERRO: ' + err.type);
+    });
+    peer.on('open', () => {
+      const conn = peer.connect(PEER_PREFIX + code, { reliable: true });
+      conn.on('open', () => sendTo(conn, { t: 'hello', name: myName() }));
+      conn.on('data', d => {
+        if (!d || typeof d !== 'object') return;
+        if (d.t === 'welcome') {
+          finished = true; clearTimeout(timer);
+          room = { code, isHost: false, peer, hostConn: conn, players: [], myId: d.id, nextId: 0, phase: 'lobby' };
+          room.players.push({ id: d.id, name: d.name, host: false, snap: null, gone: false });
+          enterLobby();
+        } else if (d.t === 'reject') {
+          fail(d.reason || 'ENTRADA RECUSADA');
+        } else guestOnMessage(d);
+      });
+      conn.on('close', () => { if (room && room.hostConn === conn) hostGone(); else fail('CONEXAO PERDIDA'); });
+    });
+  }
+
+  function guestOnMessage(d) {
+    if (!room) return;
+    if (d.t === 'lobby') {
+      const old = room.players;
+      room.players = d.players.map(p => { const o = old.find(x => x.id === p.id); return Object.assign({ snap: null, gone: false }, o || {}, p); });
+      renderLobby();
+    } else if (d.t === 'start') {
+      room.players = d.players.map(p => { const o = room.players.find(x => x.id === p.id); return Object.assign({ snap: null, gone: false }, o || {}, p, { snap: null, gone: false }); });
+      room.phase = 'playing';
+      multi = true;
+      startRun(d.seed);
+    } else if (d.t === 'state') {
+      const p = getPlayer(d.id); if (p && d.s) { p.snap = d.s; p.snapAt = performance.now(); }
+    } else if (d.t === 'left') {
+      const p = getPlayer(d.id); if (!p) return;
+      p.gone = true;
+      if (room.phase !== 'playing') room.players = room.players.filter(x => x.id !== d.id);
+      renderLobby();
+    }
+  }
+
+  function hostGone() {
+    leaveRoom(true);
+    setMsg(menuMsg, 'O HOST SAIU DA SALA');
+  }
+
+  function leaveRoom(silent) {
+    const r = room; room = null;
+    if (r) { try { r.peer.destroy(); } catch (e) {} }
+    stopLoop(); multi = false;
+    showScreen('menu');
+    if (!silent) setMsg(menuMsg, '');
+  }
+  addEventListener('beforeunload', () => { try { room && room.peer.destroy(); } catch (e) {} });
+
+  // ----- lobby -----
+  const lobbyMsg = $('lobbyMsg'), goBtn = $('goBtn'), copyBtn = $('copyBtn');
+  function enterLobby() {
+    multi = false; stopLoop();
+    room.phase = 'lobby';
+    $('roomCode').textContent = room.code;
+    setMsg(lobbyMsg, '');
+    showScreen('lobby');
+    renderLobby();
+  }
+  function renderLobby() {
+    if (!room) return;
+    $('roomCode').textContent = room.code;
+    const list = $('plist'); list.innerHTML = '';
+    room.players.filter(p => !p.gone).forEach(p => {
+      const row = document.createElement('div'); row.className = 'prow';
+      const sq = document.createElement('i'); sq.style.background = slotColor(p.id);
+      const nm = document.createElement('span'); nm.textContent = p.name;
+      row.appendChild(sq); row.appendChild(nm);
+      const tag = document.createElement('b');
+      tag.textContent = (p.host ? 'HOST' : '') + (p.id === room.myId ? (p.host ? ' · VOCE' : 'VOCE') : '');
+      if (tag.textContent) row.appendChild(tag);
+      list.appendChild(row);
+    });
+    goBtn.style.display = room.isHost ? '' : 'none';
+    if (!room.isHost) setMsg(lobbyMsg, 'AGUARDANDO O HOST COMECAR...', true);
+    else if (room.players.filter(p => !p.gone).length < 2) setMsg(lobbyMsg, 'COMPARTILHE O CODIGO PARA CONVIDAR (MIN. 2)', true);
+    else setMsg(lobbyMsg, 'PRONTO PARA COMECAR!', true);
+  }
+  copyBtn.addEventListener('click', () => {
+    sfx.select();
+    if (!room) return;
+    const url = location.href.split(/[?#]/)[0] + '?sala=' + room.code;
+    const done = () => { copyBtn.textContent = 'COPIADO!'; setTimeout(() => { copyBtn.textContent = 'COPIAR LINK'; }, 1500); };
+    try {
+      navigator.clipboard.writeText(url).then(done, () => window.prompt('Copie o link da sala:', url));
+    } catch (e) { window.prompt('Copie o link da sala:', url); }
+  });
+  $('lobbyLeave').addEventListener('click', () => { sfx.select(); leaveRoom(); });
+  goBtn.addEventListener('click', () => {
+    sfx.select();
+    if (!room || !room.isHost) return;
+    if (room.players.filter(p => !p.gone).length < 2) { setMsg(lobbyMsg, 'PRECISA DE PELO MENOS 2 JOGADORES'); return; }
+    hostStart();
+  });
+
+  function hostStart() {
+    room.players = room.players.filter(p => !p.gone);
+    room.players.forEach(p => { p.snap = null; });
+    room.phase = 'playing';
+    const seed = (Math.random() * 2 ** 31) >>> 0;
+    broadcast({ t: 'start', seed, players: room.players.map(brief) });
+    multi = true;
+    startRun(seed);
+  }
+
+  // ----- snapshots -----
+  const r1 = n => Math.round(n * 10) / 10;
+  function makeSnap() {
+    return {
+      y: r1(dino.y), vy: Math.round(dino.vy), inv: invuln > 0 ? 1 : 0,
+      m: Math.floor(dist / 50), tm: r1(elapsed), sp: Math.round(speed),
+      ob: obstacles.map(o => [o.type === 'bird' ? 1 : 0, r1(o.x), o.y, o.w, o.h, Math.round(speed + o.extra)]),
+      pr: projectiles.map(p => [Math.round(p.x), Math.round(p.y)]),
+      st: paused ? 'z' : state === 'playing' ? 'p' : state === 'cards' ? 'c' : 'd',
+      h: hudUpgrades()
+    };
+  }
+  function sendSnap() {
+    if (!room || !up) return;
+    const s = makeSnap();
+    const me = getPlayer(room.myId); if (me) { me.snap = s; me.snapAt = performance.now(); }
+    if (room.isHost) broadcast({ t: 'state', id: room.myId, s });
+    else sendTo(room.hostConn, { t: 'state', s });
+  }
+
+  // ----- resultados -----
+  function checkResults(now) {
+    if (!multi || !room || resultsShown) return;
+    const allDead = room.players.every(p => p.id === room.myId ? state === 'over' : (p.gone || (p.snap && p.snap.st === 'd')));
+    if (!allDead) { resultsTimer = 0; return; }
+    if (!resultsTimer) resultsTimer = now;
+    else if (now - resultsTimer > 1300) showResults();
+  }
+  function showResults() {
+    resultsShown = true;
+    room.phase = 'results';
+    const rows = room.players.map(p => {
+      const me = p.id === room.myId;
+      return { p, me, m: me ? Math.floor(dist / 50) : (p.snap ? p.snap.m : 0), tm: me ? r1(elapsed) : (p.snap ? p.snap.tm : 0) };
+    }).sort((a, b) => b.m - a.m || b.tm - a.tm || a.p.id - b.p.id);
+    const win = rows[0];
+    const el = $('results');
+    el.innerHTML = '<h2>' + (win.me ? 'VOCE VENCEU!' : 'VENCEDOR: <span></span>') + '</h2>';
+    if (!win.me) el.querySelector('span').textContent = win.p.name;
+    rows.forEach((r, i) => {
+      const row = document.createElement('div'); row.className = 'rrow' + (i === 0 ? ' win' : '');
+      const sq = document.createElement('i'); sq.style.background = slotColor(r.p.id);
+      const nm = document.createElement('span'); nm.textContent = (i + 1) + '. ' + r.p.name + (r.me ? ' (VOCE)' : '');
+      const n = document.createElement('span'); n.className = 'n'; n.textContent = r.m + ' M';
+      const t = document.createElement('span'); t.className = 't'; t.textContent = fmtTime(r.tm);
+      row.append(sq, nm, n, t); el.appendChild(row);
+    });
+    const btns = document.createElement('div'); btns.id = 'resBtns';
+    if (room.isHost) {
+      const b = document.createElement('button'); b.className = 'green'; b.textContent = 'REVANCHE';
+      b.addEventListener('click', () => { sfx.select(); hostStart(); });
+      btns.appendChild(b);
+    } else {
+      const w = document.createElement('span'); w.id = 'resWait'; w.textContent = 'AGUARDANDO O HOST...';
+      btns.appendChild(w);
+    }
+    const lv = document.createElement('button'); lv.className = 'dim'; lv.textContent = 'SAIR';
+    lv.addEventListener('click', () => { sfx.select(); leaveRoom(); });
+    btns.appendChild(lv);
+    el.appendChild(btns);
+    el.classList.remove('hidden');
+  }
+
+  // ---------- pausa (rotação / aba em segundo plano) ----------
+  const ov = $('ov'), ovText = $('ovText');
+  let paused = false, manualPause = false;
+  const isPortrait = () => innerHeight > innerWidth && innerWidth < 800;
+  function applyPause() {
+    const portrait = isPortrait();
+    paused = portrait || manualPause;
+    if (paused) {
+      braking = false;
+      ov.style.display = 'flex';
+      ovText.innerHTML = portrait ? 'GIRE O CELULAR<small>JOGUE NA HORIZONTAL</small>' : 'PAUSADO<small>TOQUE PARA CONTINUAR</small>';
+    } else ov.style.display = 'none';
+  }
+  ov.addEventListener('pointerdown', () => { if (manualPause && !isPortrait()) { manualPause = false; applyPause(); } });
+  addEventListener('resize', applyPause);
+  addEventListener('orientationchange', applyPause);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && gameActive && state === 'playing') { manualPause = true; applyPause(); }
+  });
+  addEventListener('contextmenu', e => e.preventDefault());
+  applyPause();
+
+  if (!peerOK()) setMsg(menuMsg, 'SEM CONEXAO COM O SERVICO ONLINE. SO O MODO SOLO FUNCIONA');
+})();
+</script>
+</body>
+</html>
